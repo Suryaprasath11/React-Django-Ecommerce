@@ -41,7 +41,6 @@ React-Django-Ecommerce/
 
 
 # 🚀 Getting Started (Local Setup)
---
 
 ## Clone the repository
 
