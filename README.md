@@ -144,12 +144,12 @@ ALLOWED_HOSTS=localhost
 
 Add any API URLs or auth tokens used by frontend here.
 
-📌 API Endpoints (Example)
+📌 API Endpoints (For Example)
 Endpoint	Method
-/api/products/	GET all products
-/api/products/<id>/	GET single product
-/api/cart/	GET / POST cart items
-/api/cart/<id>/	DELETE cart item
+⚙ /api/products/	-- GET all products<br>
+⚙ /api/products/<id>/	-- GET single product<br>
+⚙ /api/cart/	-- GET / POST cart items<br>
+⚙ /api/cart/$id/	-- DELETE cart item<br>
 
 (Add more based on your actual API)
 
