@@ -39,7 +39,6 @@ React-Django-Ecommerce/
 - **Styling:** CSS / Bootstrap
 - **Version Control:** Git & GitHub
 
---- 
 
 # 🚀 Getting Started (Local Setup)
 --
