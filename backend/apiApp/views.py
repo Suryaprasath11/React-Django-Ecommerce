@@ -665,7 +665,6 @@ def finalize_checkout(request):
     except Exception as exc:
         return Response({"error": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
 
-    # idempotent: if order already exists, return it
     existing = Order.objects.filter(strip_checkout_id=session_id).first()
     if existing:
         serializer = OrderSerializer(existing)
