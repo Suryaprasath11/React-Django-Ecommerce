@@ -30,7 +30,7 @@ from django.db import transaction
 User = get_user_model()
 endpoint_secret = settings.WEB_HOOK_SECRET_KEY
 stripe.api_key = settings.STRIPE_SECRET_KEY
-DEFAULT_DELIVERY_CHARGE = Decimal("5.00")
+DEFAULT_DELIVERY_CHARGE = Decimal("280.00")
 DEFAULT_CURRENCY = "inr"
 
 

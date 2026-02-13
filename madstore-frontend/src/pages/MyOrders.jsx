@@ -4,6 +4,23 @@ import { api } from '../api.js'
 import { useStore } from '../context/Store.jsx'
 import { formatPrice } from '../utils.js'
 
+const DELIVERY_DAYS = 7
+
+function formatDateTime(value) {
+  if (!value) return 'N/A'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return 'N/A'
+  return date.toLocaleString()
+}
+
+function getEstimatedDeliveryDate(orderedAt) {
+  if (!orderedAt) return null
+  const date = new Date(orderedAt)
+  if (Number.isNaN(date.getTime())) return null
+  date.setDate(date.getDate() + DELIVERY_DAYS)
+  return date
+}
+
 function MyOrders() {
   const { user, email } = useStore()
   const [orders, setOrders] = useState([])
@@ -54,6 +71,8 @@ function MyOrders() {
       <div className="orders-list">
         {orders.map((order) => {
           const isExpanded = expandedOrderId === order.order_id
+          const orderedDate = formatDateTime(order.created_at)
+          const estimatedDeliveryDate = getEstimatedDeliveryDate(order.created_at)
           return (
             <div key={order.order_id} className="order-card">
               <button
@@ -63,7 +82,7 @@ function MyOrders() {
               >
                 <div>
                   <strong>{order.order_id}</strong>
-                  <p className="muted">{new Date(order.created_at).toLocaleString()}</p>
+                  <p className="muted">{orderedDate}</p>
                 </div>
                 <div className="order-meta">
                   <span className="order-badge">{order.status}</span>
@@ -72,6 +91,12 @@ function MyOrders() {
               </button>
               {isExpanded ? (
                 <div className="order-detail">
+                  <p>
+                    <strong>Estimated delivery:</strong>{' '}
+                    {estimatedDeliveryDate
+                      ? estimatedDeliveryDate.toLocaleDateString()
+                      : 'N/A'}
+                  </p>
                   <p>
                     <strong>Delivery:</strong> {order.delivery_status}
                   </p>

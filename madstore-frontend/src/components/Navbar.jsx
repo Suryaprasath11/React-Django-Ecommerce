@@ -105,6 +105,17 @@ function Navbar() {
               My Orders
             </NavLink>
           ) : null}
+          {user ? (
+            <NavLink
+              to="/orders"
+              className={({ isActive }) =>
+                `${navLinkClass({ isActive })} mobile-nav-only`
+              }
+              onClick={closeMobileMenu}
+            >
+              My Orders
+            </NavLink>
+          ) : null}
           <NavLink
             to="/cart"
             className={({ isActive }) =>
