@@ -39,10 +39,8 @@ React-Django-Ecommerce/
 - **Styling:** CSS / Bootstrap
 - **Version Control:** Git & GitHub
 
---- 
 
 # 🚀 Getting Started (Local Setup)
---
 
 ## Clone the repository
 
@@ -145,7 +143,7 @@ ALLOWED_HOSTS=localhost
 Add any API URLs or auth tokens used by frontend here.
 
 📌 API Endpoints (For Example)
-Endpoint	Method
+Endpoint	Method<br>
 ⚙ /api/products/	-- GET all products<br>
 ⚙ /api/products/<id>/	-- GET single product<br>
 ⚙ /api/cart/	-- GET / POST cart items<br>
