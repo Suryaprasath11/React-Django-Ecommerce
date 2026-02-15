@@ -243,25 +243,6 @@ def google_login(request):
 
     return Response({"user": _serialize_user(user), "message": "Google login successful."})
 
-
-@api_view(['PUT'])
-def update_user_profile(request):
-    data = request.data or {}
-    email = (data.get("email") or "").strip().lower()
-    if not email:
-        return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
-    try:
-        user = User.objects.get(email=email)
-    except User.DoesNotExist:
-        return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = UserUpdateSerializer(user, data=data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        return Response({"user": _serialize_user(user), "message": "Profile updated."})
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
 @api_view(['GET'])
 def product_list(request):
     product = Product.objects.all()

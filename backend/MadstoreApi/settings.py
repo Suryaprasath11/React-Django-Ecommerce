@@ -126,4 +126,5 @@ GOOGLE_OAUTH_ALLOWED_ORIGINS = [
     ).split(",")
     if origin.strip()
 ]
+
 FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
