@@ -1045,6 +1045,30 @@
 }
 
 @media (max-width: 900px) {
+  .nav-account {
+    display: none;
+  }
+
+  .detail-reworked .detail-left {
+    display: contents;
+  }
+
+  .detail-reworked .gallery-media {
+    order: 1;
+  }
+
+  .detail-reworked .media-dots {
+    order: 2;
+  }
+
+  .detail-reworked .detail-right {
+    order: 3;
+  }
+
+  .detail-reworked .reviews-under-media {
+    order: 4;
+  }
+
   .auth {
     margin: 16px 0;
   }
