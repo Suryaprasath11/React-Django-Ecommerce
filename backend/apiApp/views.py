@@ -13,9 +13,12 @@ from django.conf import settings
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 
 from django.db.models import Q
 from decimal import Decimal, ROUND_HALF_UP
+from datetime import timedelta
+import random
 
 import stripe 
 import requests
@@ -23,6 +26,7 @@ import requests
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
+from django.utils import timezone
     
 
 
@@ -47,6 +51,10 @@ def _to_decimal(value, fallback=Decimal("0.00")):
 
 def _quantize_money(value):
     return value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def _generate_otp():
+    return f"{random.randint(0, 999999):06d}"
 
 
 def _build_order_data(request):
@@ -569,6 +577,141 @@ def mark_order_received(request, order_id):
     order.save(update_fields=["is_received", "delivery_status"])
     serializer = OrderSerializer(order)
     return Response({"message": "Order marked as received.", "order": serializer.data})
+
+
+@api_view(['POST'])
+def send_order_otp(request, order_id):
+    try:
+        order = Order.objects.get(order_id=order_id)
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    provided_email = (request.data.get("email") or "").strip().lower()
+    if not provided_email:
+        return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+    if provided_email != (order.customer_email or "").strip().lower():
+        return Response(
+            {"error": "Email does not match this order."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    now = timezone.now()
+    if order.otp_sent_at and (now - order.otp_sent_at).total_seconds() < 60:
+        return Response(
+            {"error": "Please wait before requesting OTP again."},
+            status=status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+    otp = _generate_otp()
+    expiry = now + timedelta(minutes=10)
+
+    if settings.EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend":
+        return Response(
+            {"error": "SMTP email is not configured. Please configure EMAIL_HOST_USER and EMAIL_HOST_PASSWORD."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    custom_from_email = (request.data.get("from_email") or "").strip()
+    from_email = custom_from_email or settings.OTP_FROM_EMAIL or settings.DEFAULT_FROM_EMAIL
+    if not from_email:
+        return Response(
+            {"error": "Sender email is not configured on server."},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    subject = f"Madstore OTP for order {order.order_id}"
+    custom_message = (request.data.get("custom_message") or "").strip()
+    if custom_message:
+        message = custom_message.replace("{otp}", otp).replace("{order_id}", order.order_id)
+    else:
+        message = (
+            f"Hello {order.buyer_name or 'Customer'},\n\n"
+            f"Your OTP for order {order.order_id} is: {otp}\n"
+            "This OTP is valid for 10 minutes.\n\n"
+            "If you did not request this, please ignore this email.\n\n"
+            "Thanks,\nMadstore"
+        )
+
+    try:
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=from_email,
+            recipient_list=[order.customer_email],
+            fail_silently=False,
+        )
+    except Exception as exc:
+        return Response(
+            {"error": f"Failed to send OTP email: {str(exc)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    order.otp_code = otp
+    order.otp_sent_at = now
+    order.otp_expires_at = expiry
+    order.save(update_fields=["otp_code", "otp_sent_at", "otp_expires_at"])
+
+    return Response(
+        {
+            "message": "OTP sent to customer email.",
+            "order_id": order.order_id,
+            "expires_at": expiry.isoformat(),
+        }
+    )
+
+
+@api_view(['POST'])
+def verify_order_delivery_otp(request, order_id):
+    try:
+        order = Order.objects.get(order_id=order_id)
+    except Order.DoesNotExist:
+        return Response({"error": "Order not found."}, status=status.HTTP_404_NOT_FOUND)
+
+    provided_email = (request.data.get("email") or "").strip().lower()
+    provided_otp = (request.data.get("otp") or "").strip()
+
+    if not provided_email:
+        return Response({"error": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+    if provided_email != (order.customer_email or "").strip().lower():
+        return Response({"error": "Email does not match this order."}, status=status.HTTP_403_FORBIDDEN)
+
+    if not provided_otp:
+        return Response({"error": "OTP is required."}, status=status.HTTP_400_BAD_REQUEST)
+    if len(provided_otp) != 6 or not provided_otp.isdigit():
+        return Response({"error": "OTP must be a 6-digit code."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if order.delivery_status == "Delivered" or order.is_received:
+        serializer = OrderSerializer(order)
+        return Response({"message": "Order is already delivered.", "order": serializer.data})
+
+    if not order.otp_code:
+        return Response({"error": "No OTP found for this order. Please request OTP first."}, status=status.HTTP_400_BAD_REQUEST)
+
+    now = timezone.now()
+    if order.otp_expires_at and now > order.otp_expires_at:
+        return Response({"error": "OTP expired. Please request a new OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if provided_otp != order.otp_code:
+        return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
+
+    order.delivery_status = "Delivered"
+    order.status = "paid"
+    order.is_received = True
+    order.otp_code = ""
+    order.otp_sent_at = None
+    order.otp_expires_at = None
+    order.save(
+        update_fields=[
+            "delivery_status",
+            "is_received",
+            "otp_code",
+            "otp_sent_at",
+            "otp_expires_at",
+        ]
+    )
+
+    serializer = OrderSerializer(order)
+    return Response({"message": "Order marked as delivered.", "order": serializer.data})
 
 
 

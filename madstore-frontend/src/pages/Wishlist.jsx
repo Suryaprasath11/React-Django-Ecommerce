@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import { useStore } from '../context/Store.jsx'
 import { formatPrice, resolveImageUrl } from '../utils.js'
 
 function Wishlist() {
-  const { wishlist, setWishlist, email, user } = useStore()
+  const { wishlist, setWishlist, email, user, cartCode, setCart } = useStore()
+  const navigate = useNavigate()
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -34,6 +36,22 @@ function Wishlist() {
       setWishlist((prev) => prev.filter((item) => item.product?.id !== productId))
     } catch (err) {
       setError(err.message || 'Failed to remove item from wishlist')
+    }
+  }
+
+  const addToCart = async (product) => {
+    if (!user) {
+      navigate('/login')
+      return
+    }
+    try {
+      const data = await api.post('add_to_cart/', {
+        cart_code: cartCode,
+        product_id: product.id,
+      })
+      setCart(data)
+    } catch (err) {
+      setError(err.message || 'Failed to add item to cart')
     }
   }
 
@@ -67,13 +85,22 @@ function Wishlist() {
             <div className="product-body">
               <h3>{item.product.name}</h3>
               <p className="price">{formatPrice(item.product.price)}</p>
-              <button
-                type="button"
-                className="button secondary"
-                onClick={() => removeFromWishlist(item.product.id)}
-              >
-                Remove
-              </button>
+              <div className="product-actions wishlist-actions">
+                <button
+                  type="button"
+                  className="button"
+                  onClick={() => addToCart(item.product)}
+                >
+                  Add to cart
+                </button>
+                <button
+                  type="button"
+                  className="button secondary"
+                  onClick={() => removeFromWishlist(item.product.id)}
+                >
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
         ))}

@@ -162,6 +162,8 @@ class OrderSerializer(serializers.ModelSerializer):
             "status",
             "delivery_status",
             "is_received",
+            "otp_sent_at",
+            "otp_expires_at",
             "created_at",
             "items",
         ]

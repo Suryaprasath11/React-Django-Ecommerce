@@ -25,6 +25,10 @@ function MyOrders() {
   const { user, email } = useStore()
   const [orders, setOrders] = useState([])
   const [expandedOrderId, setExpandedOrderId] = useState(null)
+  const [deliveryFilter, setDeliveryFilter] = useState('all')
+  const [otpLoadingByOrder, setOtpLoadingByOrder] = useState({})
+  const [otpNoticeByOrder, setOtpNoticeByOrder] = useState({})
+  const [otpRequestedByOrder, setOtpRequestedByOrder] = useState({})
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -38,7 +42,14 @@ function MyOrders() {
         setLoading(true)
         const targetEmail = (user?.email || email || '').toLowerCase()
         const data = await api.get(`orders/?email=${encodeURIComponent(targetEmail)}`)
-        setOrders(Array.isArray(data) ? data : [])
+        const normalized = Array.isArray(data) ? data : []
+        setOrders(normalized)
+        setOtpRequestedByOrder(
+          normalized.reduce((acc, order) => {
+            acc[order.order_id] = Boolean(order.otp_sent_at)
+            return acc
+          }, {})
+        )
       } catch (err) {
         setError(err.message || 'Failed to load orders.')
       } finally {
@@ -47,6 +58,31 @@ function MyOrders() {
     }
     loadOrders()
   }, [user?.email, email])
+
+  const handleSendOtp = async (orderId) => {
+    const targetEmail = (user?.email || email || '').toLowerCase()
+    if (!targetEmail) return
+
+    setOtpLoadingByOrder((prev) => ({ ...prev, [orderId]: true }))
+    setOtpNoticeByOrder((prev) => ({ ...prev, [orderId]: '' }))
+    try {
+      const data = await api.post(`orders/${encodeURIComponent(orderId)}/send-otp/`, {
+        email: targetEmail,
+      })
+      setOtpNoticeByOrder((prev) => ({
+        ...prev,
+        [orderId]: data?.message || 'OTP sent successfully.',
+      }))
+      setOtpRequestedByOrder((prev) => ({ ...prev, [orderId]: true }))
+    } catch (err) {
+      setOtpNoticeByOrder((prev) => ({
+        ...prev,
+        [orderId]: err.message || 'Failed to send OTP.',
+      }))
+    } finally {
+      setOtpLoadingByOrder((prev) => ({ ...prev, [orderId]: false }))
+    }
+  }
 
   if (!user) {
     return (
@@ -60,16 +96,46 @@ function MyOrders() {
     )
   }
 
+  const filteredOrders = orders.filter((order) => {
+    const isDelivered = String(order.delivery_status || '').toLowerCase() === 'delivered'
+    if (deliveryFilter === 'delivered') return isDelivered
+    if (deliveryFilter === 'not_delivered') return !isDelivered
+    return true
+  })
+
   return (
     <div className="panel orders-page">
       <h2 className="section-title">My Orders</h2>
+      <div className="category-filter">
+        <button
+          type="button"
+          className={`chip ${deliveryFilter === 'all' ? 'active' : ''}`}
+          onClick={() => setDeliveryFilter('all')}
+        >
+          All
+        </button>
+        <button
+          type="button"
+          className={`chip ${deliveryFilter === 'delivered' ? 'active' : ''}`}
+          onClick={() => setDeliveryFilter('delivered')}
+        >
+          Delivered
+        </button>
+        <button
+          type="button"
+          className={`chip ${deliveryFilter === 'not_delivered' ? 'active' : ''}`}
+          onClick={() => setDeliveryFilter('not_delivered')}
+        >
+          Not Delivered
+        </button>
+      </div>
       {loading ? <p className="muted">Loading orders...</p> : null}
       {error ? <p className="notice">{error}</p> : null}
-      {!loading && !orders.length ? (
+      {!loading && !filteredOrders.length ? (
         <p className="muted">No orders yet.</p>
       ) : null}
       <div className="orders-list">
-        {orders.map((order) => {
+        {filteredOrders.map((order) => {
           const isExpanded = expandedOrderId === order.order_id
           const orderedDate = formatDateTime(order.created_at)
           const estimatedDeliveryDate = getEstimatedDeliveryDate(order.created_at)
@@ -107,6 +173,28 @@ function MyOrders() {
                   <p>
                     <strong>Payment:</strong> {order.payment_method}
                   </p>
+                  {String(order.delivery_status || '').toLowerCase() !== 'delivered' ? (
+                    <>
+                      <div className="order-otp-row">
+                        <p className="muted">Need delivery OTP? Send it to your email.</p>
+                        <button
+                          type="button"
+                          className="button secondary order-otp-button"
+                          onClick={() => handleSendOtp(order.order_id)}
+                          disabled={Boolean(otpLoadingByOrder[order.order_id])}
+                        >
+                          {otpLoadingByOrder[order.order_id]
+                            ? 'Sending...'
+                            : otpRequestedByOrder[order.order_id]
+                              ? 'RESEND OTP'
+                              : 'GET OTP'}
+                        </button>
+                      </div>
+                      {otpNoticeByOrder[order.order_id] ? (
+                        <p className="muted">{otpNoticeByOrder[order.order_id]}</p>
+                      ) : null}
+                    </>
+                  ) : null}
                   <div className="order-items">
                     {order.items?.map((item) => (
                       <div key={item.id} className="order-item-row">

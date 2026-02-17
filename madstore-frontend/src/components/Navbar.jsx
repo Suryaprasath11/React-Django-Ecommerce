@@ -119,6 +119,28 @@ function Navbar() {
           <NavLink
             to="/cart"
             className={({ isActive }) =>
+              `${navLinkClass({ isActive })} desktop-only`
+            }
+            onClick={closeMobileMenu}
+          >
+            <i className="bi bi-cart3 nav-link-icon" aria-hidden="true" />
+            {/* <span>Cart</span> */}
+            {cartCount > 0 && <span className="pill">{cartCount}</span>}
+          </NavLink>
+          <NavLink
+            to="/wishlist"
+            className={({ isActive }) =>
+              `${navLinkClass({ isActive })} desktop-only`
+            }
+            onClick={closeMobileMenu}
+          >
+            <i className="bi bi-heart nav-link-icon" aria-hidden="true" />
+            {/* <span>Wishlist</span> */}
+            {wishlistCount > 0 && <span className="pill">{wishlistCount}</span>}
+          </NavLink>
+          <NavLink
+            to="/cart"
+            className={({ isActive }) =>
               `${navLinkClass({ isActive })} mobile-nav-only`
             }
             onClick={closeMobileMenu}

@@ -36,8 +36,13 @@ urlpatterns = [
     path("checkout/",views.create_checkout_session, name="checkout"),
     path("place_order/", views.place_order, name="place_order"),
     path("orders/", views.my_orders, name="my_orders"),
+
     path("orders/track/<str:order_id>/", views.track_order, name="track_order"),
     path("orders/<str:order_id>/received/", views.mark_order_received, name="mark_order_received"),
+    path("orders/<str:order_id>/send-otp/", views.send_order_otp, name="send_order_otp"),
+
+    path("orders/<str:order_id>/verify-delivery-otp/", views.verify_order_delivery_otp, name="verify_order_delivery_otp"),
+    
     path("checkout/finalize/", views.finalize_checkout, name="finalize_checkout"),
 
     path("webhook/",views.my_webhook_view, name="webhook"),

@@ -339,6 +339,15 @@
   margin-top: auto;
 }
 
+.wishlist-actions {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.wishlist-actions .button {
+  width: 100%;
+}
+
 .quantity-btn {
   min-width: 36px;
   padding: 6px 10px;
@@ -693,6 +702,21 @@
   margin: 0;
 }
 
+.order-otp-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px dashed #f1cfa9;
+  border-radius: 10px;
+  background: #fff7ed;
+}
+
+.order-otp-button {
+  min-width: 110px;
+}
+
 .order-items {
   display: grid;
   gap: 8px;
@@ -793,6 +817,11 @@
 
   .order-meta {
     justify-items: start;
+  }
+
+  .order-otp-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .grid.products {

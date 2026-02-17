@@ -153,13 +153,18 @@ class Order(models.Model):
     status = models.CharField(max_length=25, choices=PAYMENT_STATUS_CHOICES, default="Pending")
     delivery_status = models.CharField(max_length=30, choices=DELIVERY_STATUS_CHOICES, default="Processing")
     is_received = models.BooleanField(default=False)
+    otp_code = models.CharField(max_length=6, blank=True)
+    otp_sent_at = models.DateTimeField(null=True, blank=True)
+    otp_expires_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def save(self, *args, **kwargs):
         if not self.order_id:
             self.order_id = f"ORD-{uuid.uuid4().hex[:10].upper()}"
         super().save(*args, **kwargs)
-
+    
+    def __str__(self):
+        return f"{self.order_id} - {self.buyer_name}"
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="gallery")
