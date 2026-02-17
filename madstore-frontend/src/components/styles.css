@@ -656,6 +656,15 @@
   background: #fffaf2;
 }
 
+.order-card-clickable {
+  cursor: pointer;
+}
+
+.order-card-clickable:focus-visible {
+  outline: 2px solid #f97316;
+  outline-offset: 2px;
+}
+
 .order-head {
   width: 100%;
   border: none;
@@ -702,6 +711,22 @@
   margin: 0;
 }
 
+.my-orders-detail-row {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  gap: 12px;
+  align-items: start;
+}
+
+.my-orders-otp-left {
+  justify-self: end;
+}
+
+.my-orders-meta-right {
+  display: grid;
+  gap: 8px;
+}
+
 .order-otp-row {
   display: flex;
   align-items: center;
@@ -730,6 +755,36 @@
   border: 1px solid #f3ddc4;
   padding: 10px 12px;
   border-radius: 10px;
+}
+
+.order-detail-page {
+  display: grid;
+  gap: 14px;
+}
+
+.order-detail-content {
+  display: grid;
+  gap: 12px;
+}
+
+.order-detail-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 14px;
+  align-items: start;
+}
+
+.order-detail-left,
+.order-detail-right {
+  display: grid;
+  gap: 10px;
+}
+
+.order-detail-otp {
+  display: grid;
+  gap: 0;
+  margin-top: 8px;
+  justify-items: start;
 }
 
 .category-page {
@@ -822,6 +877,10 @@
   .order-otp-row {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .order-detail-layout {
+    grid-template-columns: 1fr;
   }
 
   .grid.products {

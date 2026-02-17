@@ -13,7 +13,8 @@ from django.conf import settings
 from django.contrib.auth import get_user_model, authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.core.mail import EmailMessage
 
 from django.db.models import Q
 from decimal import Decimal, ROUND_HALF_UP
@@ -27,6 +28,7 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 from django.utils import timezone
+import logging
     
 
 
@@ -36,6 +38,7 @@ endpoint_secret = settings.WEB_HOOK_SECRET_KEY
 stripe.api_key = settings.STRIPE_SECRET_KEY
 DEFAULT_DELIVERY_CHARGE = Decimal("280.00")
 DEFAULT_CURRENCY = "inr"
+logger = logging.getLogger(__name__)
 
 
 def _serialize_user(user):
@@ -55,6 +58,28 @@ def _quantize_money(value):
 
 def _generate_otp():
     return f"{random.randint(0, 999999):06d}"
+
+
+def _send_order_confirmation_email(order):
+    from_email = settings.DEFAULT_FROM_EMAIL or settings.EMAIL_HOST_USER
+    if not from_email:
+        raise ValueError("Sender email is not configured on server.")
+
+    html = render_to_string("emails/order_confermation.html", {
+        "name": order.buyer_name or "Customer",
+        "order_id": order.order_id,
+        "total": order.amount,
+        "payment_method": order.payment_method,
+    })
+
+    email = EmailMessage(
+        subject=f"Your Madstore Order is Confirmed - {order.order_id}",
+        body=html,
+        from_email=from_email,
+        to=[order.customer_email],
+    )
+    email.content_subtype = "html"
+    email.send(fail_silently=False)
 
 
 def _build_order_data(request):
@@ -531,12 +556,22 @@ def place_order(request):
 
     if not cart.cartitems.exists():
         return Response({"error": "Cart is empty."}, status=status.HTTP_400_BAD_REQUEST)
-
+    
     order = _create_order_from_cart(cart, order_data)
     cart.delete()
-    serializer = OrderSerializer(order)
+    serializer = OrderSerializer(order)    mail_warning = None
+    try:
+        _send_order_confirmation_email(order)
+    except Exception:
+        logger.exception("Failed to send order confirmation email for order %s", order.order_id)
+        mail_warning = "Order placed, but confirmation email could not be sent."
+
     return Response(
-        {"message": "Order placed successfully.", "order": serializer.data},
+        {
+            "message": "Order placed successfully.",
+            "order": serializer.data,
+            **({"mail_warning": mail_warning} if mail_warning else {}),
+        },
         status=status.HTTP_201_CREATED,
     )
 
@@ -633,13 +668,21 @@ def send_order_otp(request, order_id):
         )
 
     try:
-        send_mail(
+        html_message = render_to_string("emails/otp_mail.html", {
+            "otp": otp,
+            "order_id": order.order_id,
+            "name": order.buyer_name or "Customer",
+        })
+        email = EmailMessage(
             subject=subject,
-            message=message,
+            body=html_message,
             from_email=from_email,
-            recipient_list=[order.customer_email],
-            fail_silently=False,
+            to=[order.customer_email],
         )
+
+        email.content_subtype = "html"
+        email.send()
+
     except Exception as exc:
         return Response(
             {"error": f"Failed to send OTP email: {str(exc)}"},
@@ -695,7 +738,7 @@ def verify_order_delivery_otp(request, order_id):
         return Response({"error": "Invalid OTP."}, status=status.HTTP_400_BAD_REQUEST)
 
     order.delivery_status = "Delivered"
-    order.status = "paid"
+    order.status = "Paid"
     order.is_received = True
     order.otp_code = ""
     order.otp_sent_at = None
@@ -707,6 +750,7 @@ def verify_order_delivery_otp(request, order_id):
             "otp_code",
             "otp_sent_at",
             "otp_expires_at",
+            'status',
         ]
     )
 
@@ -776,6 +820,10 @@ def fulfill_checkout(session, cart_code, metadata=None):
     amount_total = _to_decimal(session.get("amount_total", 0)) / Decimal("100")
     order.amount = _quantize_money(amount_total)
     order.save(update_fields=["currency", "amount"])
+    try:
+        _send_order_confirmation_email(order)
+    except Exception:
+        logger.exception("Failed to send order confirmation email for order %s", order.order_id)
     cart.delete()
 
 
@@ -805,3 +853,4 @@ def finalize_checkout(request):
     created = Order.objects.filter(strip_checkout_id=session_id).first()
     serializer = OrderSerializer(created) if created else None
     return Response({"order": serializer.data if serializer else None, "message": "Order finalized."})
+

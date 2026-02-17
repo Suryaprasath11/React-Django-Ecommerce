@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Order Confirmed - Madstore</title>
+</head>
+
+<body style="margin:0;padding:0;background:#FFF3E4;font-family:Arial, Helvetica, sans-serif;">
+
+<div style="max-width:500px;margin:40px auto;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 8px 18px rgba(0,0,0,0.08);">
+
+<!-- Header -->
+<div style="background:#FF8A1F;padding:18px;text-align:center;color:white;">
+<h2 style="margin:0;">MADSTORE</h2>
+<p style="margin:4px 0 0;font-size:13px;">Order Confirmed 🎉</p>
+</div>
+
+<!-- Body -->
+<div style="padding:26px;color:#111827;">
+
+<p>Hello <strong>{{ name }}</strong>,</p>
+
+<p>Thank you for shopping with Madstore!  
+Your order has been placed suGEccessfully.</p>
+
+<div style="background:#FFF3E4;padding:15px;border-radius:10px;margin:20px 0;">
+
+<p style="margin:6px 0;"><strong>Order ID:</strong> {{ order_id }}</p>
+<p style="margin:6px 0;"><strong>Total Amount:</strong> ₹{{ total }}</p>
+<p style="margin:6px 0;"><strong>Payment Method:</strong> {{ payment_method }}</p>
+<br>
+<a href="http://localhost:5173/orders/{{order_id}}"
+   style="
+   display:inline-block;
+   background:#ff8b1f;
+   padding:8px 20px;
+   color:white;
+   text-decoration:none;
+   border-radius:15px;
+   font-size:.8rem;
+   margin-top:5px;
+   margin-left:135px;
+   ">
+Check Order
+</a>
+
+</div>
+
+<p>We’ll notify you once your items are shipped.</p>
+
+<hr style="border:none;border-top:1px solid #f1d7bd;margin:22px 0;">
+
+<p style="font-size:13px;color:#444;">
+If you have any questions, just reply to this email.
+</p>
+
+<p style="font-size:13px;color:#444;">
+Thanks,<br>
+<strong>Madstore Team</strong>
+</p>
+
+</div>
+
+<!-- Footer -->
+<div style="background:white;text-align:center;padding:12px;font-size:12px;color:#666;">
+© 2026 Madstore
+</div>
+
+</div>
+
+</body>
+</html>

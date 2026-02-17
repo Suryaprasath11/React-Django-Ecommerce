@@ -13,6 +13,7 @@ import Account from './pages/Account.jsx'
 import PaymentSuccess from './pages/PaymentSuccess.jsx'
 import PaymentFailed from './pages/PaymentFailed.jsx'
 import MyOrders from './pages/MyOrders.jsx'
+import OrderDetail from './pages/OrderDetail.jsx'
 
 function Layout() {
   return (
@@ -49,6 +50,7 @@ function App() {
             <Route path="/payment/success" element={<PaymentSuccess />} />
             <Route path="/payment/failed" element={<PaymentFailed />} />
             <Route path="/orders" element={<MyOrders />} />
+            <Route path="/orders/:orderId" element={<OrderDetail />} />
             <Route path="/login" element={<Login />} />
             <Route path="/account" element={<Account />} />
             <Route path="*" element={<NotFound />} />

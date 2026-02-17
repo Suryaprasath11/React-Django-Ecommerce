@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../api.js'
 import { useStore } from '../context/Store.jsx'
 import { formatPrice } from '../utils.js'
@@ -22,12 +22,11 @@ function getEstimatedDeliveryDate(orderedAt) {
 }
 
 function MyOrders() {
+  const navigate = useNavigate()
   const { user, email } = useStore()
   const [orders, setOrders] = useState([])
-  const [expandedOrderId, setExpandedOrderId] = useState(null)
   const [deliveryFilter, setDeliveryFilter] = useState('all')
   const [otpLoadingByOrder, setOtpLoadingByOrder] = useState({})
-  const [otpNoticeByOrder, setOtpNoticeByOrder] = useState({})
   const [otpRequestedByOrder, setOtpRequestedByOrder] = useState({})
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -59,26 +58,19 @@ function MyOrders() {
     loadOrders()
   }, [user?.email, email])
 
-  const handleSendOtp = async (orderId) => {
+  const handleSendOtp = async (event, orderId) => {
+    event.stopPropagation()
     const targetEmail = (user?.email || email || '').toLowerCase()
     if (!targetEmail) return
 
     setOtpLoadingByOrder((prev) => ({ ...prev, [orderId]: true }))
-    setOtpNoticeByOrder((prev) => ({ ...prev, [orderId]: '' }))
     try {
-      const data = await api.post(`orders/${encodeURIComponent(orderId)}/send-otp/`, {
+      await api.post(`orders/${encodeURIComponent(orderId)}/send-otp/`, {
         email: targetEmail,
       })
-      setOtpNoticeByOrder((prev) => ({
-        ...prev,
-        [orderId]: data?.message || 'OTP sent successfully.',
-      }))
       setOtpRequestedByOrder((prev) => ({ ...prev, [orderId]: true }))
-    } catch (err) {
-      setOtpNoticeByOrder((prev) => ({
-        ...prev,
-        [orderId]: err.message || 'Failed to send OTP.',
-      }))
+    } catch {
+      // Intentionally silent per UI requirement.
     } finally {
       setOtpLoadingByOrder((prev) => ({ ...prev, [orderId]: false }))
     }
@@ -116,36 +108,41 @@ function MyOrders() {
         </button>
         <button
           type="button"
-          className={`chip ${deliveryFilter === 'delivered' ? 'active' : ''}`}
-          onClick={() => setDeliveryFilter('delivered')}
-        >
-          Delivered
-        </button>
-        <button
-          type="button"
           className={`chip ${deliveryFilter === 'not_delivered' ? 'active' : ''}`}
           onClick={() => setDeliveryFilter('not_delivered')}
         >
           Not Delivered
         </button>
+        <button
+          type="button"
+          className={`chip ${deliveryFilter === 'delivered' ? 'active' : ''}`}
+          onClick={() => setDeliveryFilter('delivered')}
+        >
+          Delivered
+        </button>
       </div>
       {loading ? <p className="muted">Loading orders...</p> : null}
       {error ? <p className="notice">{error}</p> : null}
-      {!loading && !filteredOrders.length ? (
-        <p className="muted">No orders yet.</p>
-      ) : null}
+      {!loading && !filteredOrders.length ? <p className="muted">No orders yet.</p> : null}
       <div className="orders-list">
         {filteredOrders.map((order) => {
-          const isExpanded = expandedOrderId === order.order_id
           const orderedDate = formatDateTime(order.created_at)
           const estimatedDeliveryDate = getEstimatedDeliveryDate(order.created_at)
+          const isDelivered = String(order.delivery_status || '').toLowerCase() === 'delivered'
           return (
-            <div key={order.order_id} className="order-card">
-              <button
-                type="button"
-                className="order-head"
-                onClick={() => setExpandedOrderId(isExpanded ? null : order.order_id)}
-              >
+            <div
+              key={order.order_id}
+              className="order-card order-card-clickable"
+              onClick={() => navigate(`/orders/${encodeURIComponent(order.order_id)}`)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  navigate(`/orders/${encodeURIComponent(order.order_id)}`)
+                }
+              }}
+            >
+              <div className="order-head">
                 <div>
                   <strong>{order.order_id}</strong>
                   <p className="muted">{orderedDate}</p>
@@ -154,59 +151,36 @@ function MyOrders() {
                   <span className="order-badge">{order.status}</span>
                   <span className="order-total">{formatPrice(order.amount)}</span>
                 </div>
-              </button>
-              {isExpanded ? (
-                <div className="order-detail">
-                  <p>
-                    <strong>Estimated delivery:</strong>{' '}
-                    {estimatedDeliveryDate
-                      ? estimatedDeliveryDate.toLocaleDateString()
-                      : 'N/A'}
-                  </p>
-                  <p>
-                    <strong>Delivery:</strong> {order.delivery_status}
-                  </p>
-                  <p>
-                    <strong>Address:</strong> {order.address_line}, {order.city}, {order.state}{' '}
-                    {order.postal_code}, {order.country}
-                  </p>
-                  <p>
-                    <strong>Payment:</strong> {order.payment_method}
-                  </p>
-                  {String(order.delivery_status || '').toLowerCase() !== 'delivered' ? (
-                    <>
-                      <div className="order-otp-row">
-                        <p className="muted">Need delivery OTP? Send it to your email.</p>
-                        <button
-                          type="button"
-                          className="button secondary order-otp-button"
-                          onClick={() => handleSendOtp(order.order_id)}
-                          disabled={Boolean(otpLoadingByOrder[order.order_id])}
-                        >
-                          {otpLoadingByOrder[order.order_id]
-                            ? 'Sending...'
-                            : otpRequestedByOrder[order.order_id]
-                              ? 'RESEND OTP'
-                              : 'GET OTP'}
-                        </button>
-                      </div>
-                      {otpNoticeByOrder[order.order_id] ? (
-                        <p className="muted">{otpNoticeByOrder[order.order_id]}</p>
-                      ) : null}
-                    </>
-                  ) : null}
-                  <div className="order-items">
-                    {order.items?.map((item) => (
-                      <div key={item.id} className="order-item-row">
-                        <span>{item.product?.name}</span>
-                        <span>
-                          {item.quantity} x {formatPrice(item.unit_price)}
-                        </span>
-                      </div>
-                    ))}
+              </div>
+              <div className="order-detail">
+                <div className="my-orders-detail-row">
+                  <div className="my-orders-meta-right">
+                    <p>
+                      <strong>Estimated delivery:</strong>{' '}
+                      {estimatedDeliveryDate ? estimatedDeliveryDate.toLocaleDateString() : 'N/A'}
+                    </p>
+                    <p>
+                      <strong>Delivery:</strong> {order.delivery_status}
+                    </p>
                   </div>
+                  {!isDelivered ? (
+                    <div className="my-orders-otp-left">
+                      <button
+                        type="button"
+                        className="button secondary order-otp-button"
+                        onClick={(event) => handleSendOtp(event, order.order_id)}
+                        disabled={Boolean(otpLoadingByOrder[order.order_id])}
+                      >
+                        {otpLoadingByOrder[order.order_id]
+                          ? 'Sending...'
+                          : otpRequestedByOrder[order.order_id]
+                            ? 'RESEND OTP'
+                            : 'GET OTP'}
+                      </button>
+                    </div>
+                  ) : null}
                 </div>
-              ) : null}
+              </div>
             </div>
           )
         })}

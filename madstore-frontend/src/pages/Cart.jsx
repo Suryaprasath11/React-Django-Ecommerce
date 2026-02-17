@@ -3,7 +3,7 @@ import { api } from '../api.js'
 import { useStore } from '../context/Store.jsx'
 import { formatPrice, resolveImageUrl } from '../utils.js'
 
-const DELIVERY_CHARGE = 5
+const DELIVERY_CHARGE = 280
 
 const initialBuyer = {
   buyer_name: '',
