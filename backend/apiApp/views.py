@@ -20,7 +20,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from datetime import timedelta
 import random
 
-import stripe 
+import stripe  # type: ignore   to suppers the warning
 import requests
 
 from django.http import HttpResponse
