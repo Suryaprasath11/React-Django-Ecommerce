@@ -1,22 +1,29 @@
 # <div align="center">🛒 React + Django E-Commerce Platform</div>
+
 <div align="center">BY <a href="https://github.com/Suryaprasath11"> SURYA PRASATH 🍸</a></div><br>
+
 A full-stack e-commerce web application built with Django REST Framework and React (Vite).
-This project focuses on scalable architecture, clean API design, and a modern frontend experience, making it a solid foundation for real-world online stores.
-<br>
-<div align="center"> <img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=for-the-badge&logo=react&logoColor=black" /> <img src="https://img.shields.io/badge/Build-Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" /> <img src="https://img.shields.io/badge/Backend-Django-092E20?style=for-the-badge&logo=django&logoColor=white" /> <img src="https://img.shields.io/badge/API-DRF-red?style=for-the-badge" /> <img src="https://img.shields.io/badge/Database-SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" /></div>
+This project focuses on scalable architecture, clean API design, and a modern frontend experience — now enhanced with **Email + OTP based authentication & order verification**.
+
+<div align="center">
+<img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=for-the-badge&logo=react&logoColor=black" />
+<img src="https://img.shields.io/badge/Build-Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" />
+<img src="https://img.shields.io/badge/Backend-Django-092E20?style=for-the-badge&logo=django&logoColor=white" />
+<img src="https://img.shields.io/badge/API-DRF-red?style=for-the-badge" />
+<img src="https://img.shields.io/badge/Database-SQLite-003B57?style=for-the-badge&logo=sqlite&logoColor=white" />
+</div>
 
 ---
 
-
 ```
 React-Django-Ecommerce/
-├── backend/              # Django backend
-│   ├── api/              # API app with models, serializers
+├── backend/
+│   ├── api/
 │   ├── settings.py
 │   ├── urls.py
 │   └── manage.py
 │
-├── madstore-frontend/     # React frontend (Vite)
+├── madstore-frontend/
 │   ├── public/
 │   ├── src/
 │   ├── package.json
@@ -24,158 +31,165 @@ React-Django-Ecommerce/
 │
 ├── .gitignore
 └── README.md
-
 ```
 
-## 🎯 Project Goal
-  To demonstrate how a modern frontend can seamlessly interact with a robust Django backend, following best practices in API-driven development and clean code architecture.
+---
 
+## ✨ Key Features
+
+✅ Product listing & cart system
+✅ REST API powered backend
+✅ React + Vite frontend
+✅ Order placement flow
+✅ Email integration (SMTP)
+✅ OTP verification for orders / authentication
+✅ Secure environment variables
+
+---
+
+## 🎯 Project Goal
+
+To demonstrate how a modern frontend can seamlessly interact with a robust Django backend, following best practices in API-driven development — including **real-world email + OTP flows**.
+
+---
 
 ## 🚀 Tech Stack & Tools
 
-- **Frontend:** React.js, Vite
-- **Backend:** Django, Django REST Framework
-- **Database:** SQLite , MySQL
-- **Styling:** CSS / Bootstrap
-- **Version Control:** Git & GitHub
+* Frontend: React.js, Vite
+* Backend: Django, Django REST Framework
+* Database: SQLite / MySQL
+* Styling: CSS / Bootstrap
+* Email: SMTP (Gmail supported)
+* Version Control: Git & GitHub
 
+---
 
 # 🚀 Getting Started (Local Setup)
 
-## Clone the repository
-
+## Clone Repository
 
 ```
-
 git clone https://github.com/Suryaprasath11/React-Django-Ecommerce.git
 cd React-Django-Ecommerce
-
 ```
+
+---
 
 ## 🐍 Backend Setup (Django)
 
-✧ Create virtual environment:
-```
+Create virtual environment:
 
+```
 python -m venv venv
-
 ```
 
-✧Activate environment:
+Activate:
 
 Windows
-```
 
+```
 .\venv\Scripts\activate
-
-```
-✧ Linux & macOS
 ```
 
+Linux / macOS
+
+```
 source venv/bin/activate
-
 ```
 
-✧ Install dependencies:
-```
+Install dependencies:
 
+```
 pip install -r backend/requirements.txt
-
 ```
 
-✧ Apply migrations:
-```
+Apply migrations:
 
+```
 cd backend
 python manage.py migrate
-
 ```
 
-✧ Start backend server:
-```
+Run server:
 
+```
 python manage.py runserver
-
 ```
 
-The API should now be running at http://localhost:8000/.
+Backend runs on: [http://localhost:8000/](http://localhost:8000/)
 
-## ⚛️ Frontend Setup (React + Vite)
+---
 
-Move to frontend folder:
+## ⚛️ Frontend Setup
+
 ```
-
 cd ../madstore-frontend
-
-```
-
-✧ Install dependencies:
-```
-
 npm install
-
-```
-
-## Start development server:
-```
-
 npm run dev
-
 ```
 
-The frontend should now be available at http://localhost:5173/ (or another port shown in terminal).
+Frontend runs on: [http://localhost:5173/](http://localhost:5173/)
 
-## ⚙ Environment Variables
+---
 
-✧ Create a .env file in both backend and frontend (if needed) to store keys:
+## 🔐 Email + OTP Configuration
 
-# Example for backend
+Create `.env` inside **backend/**:
+
 ```
-
-SECRET_KEY=your_django_secret_key
-
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=your_email@gmail.com
+EMAIL_HOST_PASSWORD=your_app_password
+SECRET_KEY=your_django_secret
 DEBUG=True
-
-ALLOWED_HOSTS=localhost
-
 ```
 
-Add any API URLs or auth tokens used by frontend here.
+📌 OTP Flow:
 
-📌 API Endpoints (For Example)
-Endpoint	Method<br>
-⚙ /api/products/	-- GET all products<br>
-⚙ /api/products/<id>/	-- GET single product<br>
-⚙ /api/cart/	-- GET / POST cart items<br>
-⚙ /api/cart/$id/	-- DELETE cart item<br>
+* OTP sent to user email
+* OTP validated before order confirmation
+* Prevents fake orders
 
-(Add more based on your actual API)
+---
+
+## 📌 Sample API Endpoints
+
+/api/products/  → GET all products
+/api/cart/ → POST cart
+/api/send-otp/ → Send OTP
+/api/verify-otp/ → Verify OTP
+/api/place-order/ → Final order
+
+---
 
 ## 🔄 Deployment
 
-Before deploying:
+Frontend:
 
-✧ Run build for frontend:
 ```
-
 npm run build
-
 ```
 
-Serve build files with any static hosting (Netlify, Vercel, etc.)
+Deploy on Netlify / Vercel
 
-Host Django app on Heroku/Render/DigitalOcean.
-
----
-
-📄 License
-
-This project is licensed under the MIT License.
-Feel free to use, modify, and distribute as needed.
+Backend:
+Deploy Django on Render / Railway / DigitalOcean
 
 ---
 
-🙌 Contributions
+## 📄 License
 
-Contributions are welcome!
-If you find bugs or want to add features like payments, user profile, orders, etc., open an issue or PR.
+MIT License
+
+---
+
+## 🙌 Contributions
+
+Feel free to improve this project — payments, user accounts, dashboards, etc.
+PRs are welcome 🚀
+
+---
+
+Built with ❤️ by Surya
